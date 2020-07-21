@@ -1,0 +1,73 @@
+#####################################################
+# Vault
+#####################################################
+domain: "example.net"
+prefix: "apps"
+namespace: "dba"
+remote_user_name: "ec2-user"
+remote_user_sshkey: "libre"
+aws_access_key: ""
+aws_secret_key: ""
+aws_zoneid: "Z3CC28386O3605"
+aws_region: "us-east-2"
+rhsm_username: ""
+rhsm_password: ""
+
+#####################################################
+# Default
+#####################################################
+subdomain: "{{ namespace }}.{{ domain }}"
+wildcard: "{{ prefix }}.{{ domain }}"
+intranet: "{{ namespace }}.local"
+remote_user_home: "/home/{{ remote_user_name }}"
+remote_user_sshdir: "{{ remote_user_home }}/.ssh"
+remote_user_sshcfg: "{{ remote_user_sshdir }}/config"
+local_workspace: "{{ lookup('env','PWD') }}/.{{ domain }}"
+local_keypair: "{{ local_workspace }}/{{ remote_user_sshkey }}"
+ocp4_installer_download: "https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/openshift-install-linux.tar.gz"
+
+#####################################################
+# Ansible by RedHat
+#####################################################
+ansible_user: "{{ remote_user_name }}"
+ansible_ssh_private_key_file: "{{ local_keypair }}"
+
+#####################################################
+# Amazon Web Services
+#####################################################
+# VPC information
+vpc_name: "{{ namespace }}-vpc"
+vpc_cidr_block: "10.0.0.0/16"
+
+# VPC with public subnet
+public_subnet_1_cidr: "10.0.0.0/24"
+public_route_cidr_block: "0.0.0.0/0"
+
+# VPC with public/private subnets
+# private_subnet_1_cidr: "10.0.1.0/24"
+
+# VPC with public/private subnets and multi availability zones
+# public_subnet_2_cidr: "10.0.10.0/24"
+# private_subnet_2_cidr: "10.0.11.0/24"
+
+# Tagging
+tag_vpc: "{{ namespace }}-vpc"
+tag_public: "{{ namespace }}-public"
+tag_subnet: "{{ tag_public }}-subnet"
+tag_route: "{{ tag_public }}-route"
+tag_workstation: "workstation"
+
+# Security group
+seg_vpc: "{{ tag_vpc }}-seg"
+seg_ingress: "{{ namespace }}-ingress-seg"
+seg_egress: "{{ namespace }}-egress-seg"
+seg_ssh: "{{ namespace }}-ssh-seg"
+
+# EC2 instances
+ec2_workstation_size: "m4.xlarge"
+ec2_workstation_image: "ami-02b08ab270c6937f0"
+# Use the owner tag if you want to look up the AMI automatically
+redhat_owner_id: "309956199498"
+ec2_workstation_group_name: "{{ namespace }}-{{ tag_workstation }}"
+os_workstation_root_vol_size: "50"
+

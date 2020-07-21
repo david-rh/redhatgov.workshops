@@ -1,0 +1,11 @@
+---
+#############################################################
+# Provision AWS infrastructure
+#############################################################
+- name: Create Infrastructure
+  hosts: localhost
+  connection: local
+  gather_facts: False
+  roles:
+   - aws.infra
+

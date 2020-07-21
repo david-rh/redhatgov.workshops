@@ -1,0 +1,84 @@
+---
+# roles/aws.provision/tasks/03_vms.yml
+
+- name: Find rhel7 default AMI
+  ec2_ami_info:
+   owners: "{{ redhat_owner_id }}"
+   region: "{{ aws_region }}"
+   filters:
+     name: "RHEL-8.0*"
+     architecture: "x86_64"
+   aws_access_key: "{{ aws_access_key }}"
+   aws_secret_key: "{{ aws_secret_key }}"
+  register: "ami_find"
+  when: redhat_owner_id is defined
+
+
+#---------------------------------------------------
+# Workstation
+#---------------------------------------------------
+
+- name: Set workstation AMI details
+  set_fact:
+   ec2_workstation_image: "{{ ami_find['images'] | last }}"
+  when: (ec2_workstation_image is not defined) and
+        (redhat_owner_id is defined)
+
+#- name: Set workstation AMI device
+#  set_fact:
+#    ec2_workstation_device: "{{ami_find['results'][0]['root_device_name']}}"
+
+- debug: msg="{{ ec2_workstation_image }}"
+#- debug: msg="{{ ec2_workstation_device }}"
+
+
+
+- name: Provision WorkStation
+  ec2:
+   instance_type: "{{ ec2_workstation_size }}"
+   image: "{{ ec2_workstation_image }}"
+   region: "{{ aws_region }}"
+   aws_access_key: "{{ aws_access_key }}"
+   aws_secret_key: "{{ aws_secret_key }}"
+   wait: true
+   key_name: "{{ remote_user_sshkey }}"
+#   vpc_subnet_id: "{{ public_subnet_id }}"
+#   group: ['{{ seg_vpc }}', '{{ seg_ingress }}', '{{ seg_egress }}', '{{ seg_ssh }}']
+#   volumes:
+#    - device_name: "{{ ec2_workstation_device }}"
+#      volume_size: "{{ os_workstation_root_vol_size }}"
+#      volume_type: gp2
+#      delete_on_termination: true
+   count_tag:
+    Name: "{{ tag_workstation }}"
+   instance_tags:
+    Name: "{{ tag_workstation }}"
+    namespace: "{{ namespace }}"
+   exact_count: 1
+  register: ec2_workstation
+
+- name: Allocate a new elastic IP and associate it with workstation
+  ec2_eip:
+   device_id: "{{ ec2_workstation['tagged_instances'][0]['id'] }}"
+   region: "{{ aws_region }}"
+   aws_access_key: "{{ aws_access_key }}"
+   aws_secret_key: "{{ aws_secret_key }}"
+   release_on_disassociation: true
+  register: workstation_elastic_ip
+
+#---------------------------------------------------
+# Register Facts
+#---------------------------------------------------
+#- name: Register VM facts
+  #set_fact:
+   #workstation_private_ip: "{{ ec2_workstation['tagged_instances'][0]['private_ip'] }}"
+   #workstation_public_ip: "{{ workstation_elastic_ip['public_ip'] }}"
+   #workstation_private_dns_name: "{{ ec2_workstation['tagged_instances'][0]['private_dns_name'] }}"
+#
+#- name: Wait for workstation SSH to come up
+  #local_action: wait_for
+                #host={{ item }}
+                #port=22
+                #state=started
+  #with_items:
+   #- "{{workstation_public_ip}}"

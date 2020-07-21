@@ -1,0 +1,30 @@
+---
+# roles/aws.provision/tasks/main.yml
+
+- include: 00_key.yml
+#- include: 01_vpc.yml
+#- include: 02_seg.yml
+- include: 03_vms.yml
+#- include: 04_dns.yml
+#- include: 05_ssh.yml
+
+#---------------------------------------------------
+# Add a host (and alternatively a group) to the
+# ansible-playbook in-memory inventory
+#---------------------------------------------------
+#- name: Add master/bastion to created_vms group
+#  add_host:
+#    name={{ item.ip }}
+#    groups=created_vms
+#    instance_name={{ item.name }}
+#  with_items:
+#    - { name: '{{ tag_master }}', ip: '{{ master_public_ip }}' }
+#    - { name: '{{ tag_bastion }}', ip: '{{ bastion_public_ip }}' }
+#
+#- name: Add master to created_nodes group
+#  add_host:
+#    name={{ item.ip }}
+#    groups=created_nodes
+#    instance_name={{ item.name }}
+#  with_items:
+#    - { name: '{{ tag_master }}', ip: '{{ master_public_ip }}' }
