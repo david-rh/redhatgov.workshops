@@ -1,0 +1,30 @@
+---
+# roles/ocp4/tasks/00_install_ocp.yml
+
+
+#####
+# Download OpenShift Installer
+#####
+- name: Create a directory if it does not exist
+  file:
+    path: ocpinstall/
+    state: directory
+    mode: '0755'
+
+## These next two steps theoretically could be done in one using unarchive. However, attempts to use unarchive failed.
+- name: Download OpenShift 
+  get_url:
+    url: https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/openshift-install-linux.tar.gz
+    dest: ocpinstall/openshift-install-linux.tar.gz
+    mode: '0640'
+
+- name: Extract OpenShift Installer
+  shell: cd ocpinstall; /usr/bin/tar -xf openshift-install-linux.tar.gz 
+ 
+- name: Process install_config template
+  template:
+    src: roles/ocp4/templates/install-config.yaml.j2
+    dest: ocpinstall/install-config.yaml
+
+- name: Install OpenShift
+  shell: ocpinstall/openshift-install create cluster --dir=ocpinstall

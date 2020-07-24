@@ -8,4 +8,5 @@
   gather_facts: False
   roles:
    - aws.infra
+   - ocp4
 

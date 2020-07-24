@@ -12,6 +12,7 @@ aws_zoneid: "Z3CC28386O3605"
 aws_region: "us-east-2"
 rhsm_username: ""
 rhsm_password: ""
+pull_secret: ''
 
 #####################################################
 # Default

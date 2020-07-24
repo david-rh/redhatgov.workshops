@@ -1,0 +1,5 @@
+---
+# roles/ocp4/tasks/main.yml
+
+
+- include: 00_install_ocp.yml
