@@ -1,0 +1,11 @@
+- name: delete ec2 group
+  ec2_group:
+    name: "{{ seg_vpc }}"
+    region: "{{ aws_region }}"
+    aws_access_key: "{{ aws_access_key }}"
+    aws_secret_key: "{{ aws_secret_key }}"
+#    tags: 
+#      name: "{{ seg_vpc }}"
+    state: "{{newstate }}"
+  register: sec_grp_results
+  when: newstate == "absent"
