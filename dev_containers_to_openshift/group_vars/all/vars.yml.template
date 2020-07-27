@@ -13,6 +13,7 @@ aws_zoneid: "Z3CC28386O3605"
 aws_region: "us-east-2"
 rhsm_username: ""
 rhsm_password: ""
+pull_secret: ''
 
 #####################################################
 # Default
@@ -65,10 +66,16 @@ seg_egress: "{{ namespace }}-egress-seg"
 seg_ssh: "{{ namespace }}-ssh-seg"
 
 # EC2 instances
-ec2_workstation_size: "m4.xlarge"
-ec2_workstation_image: "ami-02b08ab270c6937f0"
+ec2_info:
+  rhel8:
+    owners: 309956199498
+    size: m4.xlarge
+    os_type: linux
+    disk_space: 10
+    architecture: x86_64
+    filter: 'RHEL-8*HVM-*Hourly*'
+    username: ec2-user
+
 # Use the owner tag if you want to look up the AMI automatically
-redhat_owner_id: "309956199498"
 ec2_workstation_group_name: "{{ namespace }}-{{ tag_workstation }}"
-os_workstation_root_vol_size: "50"
 

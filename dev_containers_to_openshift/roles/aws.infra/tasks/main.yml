@@ -1,5 +1,5 @@
 ---
-# roles/aws.provision/tasks/main.yml
+# roles/aws.infra/tasks/main.yml
 
 - include: 00_key.yml
 - include: 01_vpc.yml
