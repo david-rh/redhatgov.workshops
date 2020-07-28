@@ -1,0 +1,69 @@
+  - name: Assume we're in startup, unless shutdown flag is set
+    set_fact:
+     newstate: "present"
+    when: newstate is not defined
+
+  - name: Check newstate
+    debug:
+      var: newstate
+
+  - name: create a new ec2 VPC
+    # create a vpc with name, cidr block,dns support, and tenancy
+    ec2_vpc_net:
+      aws_access_key: "{{ aws_access_key }}"
+      aws_secret_key: "{{ aws_secret_key }}"
+      name: "{{ vpc_name }}" 
+      cidr_block: "{{ vpcCidrBlock }}"
+      region: "{{ aws_region }}"
+      # enable dns support 
+      dns_support: yes
+      # enable dns hostnames
+      dns_hostnames: yes
+      tenancy: default
+      state: present
+    register: ec2_vpc_net_result
+
+  - name: create ec2 vpc internet gateway       
+    # create/delete an internet gateway for the vpc
+    ec2_vpc_igw:
+      aws_access_key: "{{ aws_access_key }}"
+      aws_secret_key: "{{ aws_secret_key }}"
+      vpc_id: "{{ ec2_vpc_net_result.vpc.id }}"
+      region: "{{ aws_region }}"
+      state: "{{ newstate }}" 
+      tags:
+        Name: "{{ tag_igw_name }}"
+    register: igw_result
+
+  - name: create/delete ec2 vpc subnet
+    # create/delete the subnet for the vpc with a cidr block
+    ec2_vpc_subnet:
+      aws_access_key: "{{ aws_access_key }}"
+      aws_secret_key: "{{ aws_secret_key }}"
+      vpc_id: "{{ ec2_vpc_net_result.vpc.id }}"
+      region: "{{ aws_region }}"
+      az: "{{ aws_zone_sub }}"      # the availability zone
+      state: "{{ newstate }}"
+      cidr: "{{ subNetCidrBlock }}"
+      # enable public ip
+      map_public: yes
+      resource_tags:
+        Name: "{{ tag_subnet }}"
+    register: subnet_result
+
+  - name: Delete ec2 VPC, if in teardown mode
+    # Delete a vpc with name, cidr block,dns support, and tenancy
+    ec2_vpc_net:
+      aws_access_key: "{{ aws_access_key }}"
+      aws_secret_key: "{{ aws_secret_key }}"
+      name: "{{ vpc_name }}" 
+      cidr_block: "{{ vpcCidrBlock }}"
+      region: "{{ aws_region }}"
+      # enable dns support 
+      dns_support: yes
+      # enable dns hostnames
+      dns_hostnames: yes
+      tenancy: default
+      state: "{{ newstate }}"
+    register: ec2_vpc_net_result
+    when: newstate == "absent"

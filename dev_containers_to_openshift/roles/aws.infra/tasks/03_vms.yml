@@ -1,8 +1,6 @@
 ---
 # roles/aws.provision/tasks/03_vms.yml
 
-- debug: msg="{{ ec2_info }}"
-
 #####
 # Find latest RHEL 8.0 AMI from Red Hat
 #####
@@ -39,13 +37,16 @@
 #      volume_size: "{{ os_workstation_root_vol_size }}"
 #      volume_type: gp2
 #      delete_on_termination: true
+   group: "{{ seg_vpc }}"
    count_tag:
     Name: "{{ tag_workstation }}"
    instance_tags:
     Name: "{{ tag_workstation }}"
     namespace: "{{ namespace }}"
    exact_count: 1
+#   state: "{{ newstate }}"
   register: ec2_workstation
+  when: newstate != "absent"
 
 - name: Allocate a new elastic IP and associate it with workstation
   ec2_eip:
@@ -55,20 +56,47 @@
    aws_secret_key: "{{ aws_secret_key }}"
    release_on_disassociation: true
   register: workstation_elastic_ip
+  when: newstate != "absent"
 
-#---------------------------------------------------
-# Register Facts
-#---------------------------------------------------
-#- name: Register VM facts
-  #set_fact:
-   #workstation_private_ip: "{{ ec2_workstation['tagged_instances'][0]['private_ip'] }}"
-   #workstation_public_ip: "{{ workstation_elastic_ip['public_ip'] }}"
-   #workstation_private_dns_name: "{{ ec2_workstation['tagged_instances'][0]['private_dns_name'] }}"
-#
-#- name: Wait for workstation SSH to come up
-  #local_action: wait_for
-                #host={{ item }}
-                #port=22
-                #state=started
-  #with_items:
-   #- "{{workstation_public_ip}}"
+- name: Create instance list
+  ec2_instance_info:
+    region: "{{ aws_region }}"
+    filters:
+      "tag:Name": "{{ tag_workstation }}"
+      instance-state-name: ['running']
+  register: instance_list
+
+- debug: msg="{{ instance_list }}"
+
+- debug: msg="{{ instance_list.instances[0].instance_id }}"
+
+- name: Delete elastic IP associated with workstation, if requested
+  ec2_eip:
+#   device_id: "{{ ec2_workstation['tagged_instances'][0]['id'] }}"
+   device_id: "{{ instance_list.instances[0].instance_id }}"
+   region: "{{ aws_region }}"
+   aws_access_key: "{{ aws_access_key }}"
+   aws_secret_key: "{{ aws_secret_key }}"
+   state: "{{ newstate }}"
+  register: workstation_elastic_ip
+  when: newstate == "XXXXXabsent"
+
+- name: Delete WorkStation, if requested
+  ec2:
+#    instance_type: "{{ ec2_workstation_size }}"
+#    image: "{{ ec2_workstation_image }}"
+    region: "{{ aws_region }}"
+    aws_access_key: "{{ aws_access_key }}"
+    aws_secret_key: "{{ aws_secret_key }}"
+    wait: true
+    state: "{{ newstate }}"
+#    group: "{{ seg_vpc }}"
+#     instance_ids: "{{ item }}"
+    instance_ids: "{{ instance_list.instances[0].instance_id }}"
+#    count_tag:
+#      Name: "{{ tag_workstation }}"
+#    instance_tags:
+#      Name: "{{ tag_workstation }}"
+#      namespace: "{{ namespace }}"
+  with_items: "{{ instance_list }}"
+  when: newstate == "absent"

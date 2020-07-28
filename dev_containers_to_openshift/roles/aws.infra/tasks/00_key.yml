@@ -4,6 +4,10 @@
 #---------------------------------------------------
 # Key
 #---------------------------------------------------
+- name: Include vars of aws-keys.yaml
+  include_vars:
+    file: aws-keys.yml
+
 - name: Check key exists
   stat:
     path: "{{ local_keypair }}"

@@ -2,11 +2,12 @@
 # roles/aws.infra/tasks/main.yml
 
 - include: 00_key.yml
-#- include: 01_vpc.yml
-#- include: 02_seg.yml
+- include: 01_vpc.yml
+- include: 02_seg.yml
 - include: 03_vms.yml
 #- include: 04_dns.yml
 #- include: 05_ssh.yml
+- include: 09_del.yml
 
 #---------------------------------------------------
 # Add a host (and alternatively a group) to the

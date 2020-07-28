@@ -1,0 +1,17 @@
+---
+#############################################################
+# Provision AWS infrastructure
+#############################################################
+- name: Create Infrastructure
+  hosts: localhost
+  connection: local
+  gather_facts: False
+
+# By default, get rid of stuff
+  vars:
+   newstate: "absent"
+
+# Now summon role to destroy things
+  roles:
+   - aws.infra
+

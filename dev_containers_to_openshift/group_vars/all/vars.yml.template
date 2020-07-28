@@ -5,9 +5,10 @@ domain: "example.net"
 prefix: "apps"
 namespace: "dba"
 remote_user_name: "ec2-user"
-remote_user_sshkey: "libre"
-aws_access_key: ""
-aws_secret_key: ""
+remote_user_sshkey: "rhrussp"
+#remote_user_sshkey: "libre"
+#aws_access_key: ""
+#aws_secret_key: ""
 aws_zoneid: "Z3CC28386O3605"
 aws_region: "us-east-2"
 rhsm_username: ""
@@ -77,4 +78,10 @@ ec2_info:
 
 # Use the owner tag if you want to look up the AMI automatically
 ec2_workstation_group_name: "{{ namespace }}-{{ tag_workstation }}"
+
+# Startup vars
+vpcCidrBlock: "10.0.0.0/24"
+subNetCidrBlock: "10.0.0.0/24"
+tag_igw_name: "{{ namespace }}-igw"
+aws_zone_sub: "us-east-2a"
 

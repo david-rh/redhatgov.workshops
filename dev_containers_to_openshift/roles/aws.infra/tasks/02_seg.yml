@@ -1,0 +1,27 @@
+- name: create new ec2 group
+  ec2_group:
+    name: "{{ seg_vpc }}"
+    description: security group for workshop machines
+#    vpc_id: 12345
+    region: "{{ aws_region }}"
+    aws_access_key: "{{ aws_access_key }}"
+    aws_secret_key: "{{ aws_secret_key }}"
+    tags: 
+      name: "{{ seg_vpc }}"
+    state: "{{newstate }}"
+    rules:
+#      - proto: all
+      - proto: tcp
+        ports:
+        - 22
+        - 80
+        - 443
+        cidr_ip: 0.0.0.0/0
+        rule_desc: allowing full access to ssh 
+    rules_egress:
+      - proto: all
+        from_port: 0
+        to_port: 65535
+        cidr_ip: 0.0.0.0/0
+  register: sec_grp_results
+  when: newstate != "absent"
