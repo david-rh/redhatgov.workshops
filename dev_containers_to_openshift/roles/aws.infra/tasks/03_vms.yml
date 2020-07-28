@@ -20,14 +20,8 @@
     node_ami: >
       {{ amis.images | selectattr('name', 'defined') | sort(attribute='creation_date') | last }}
 
-#- name: Set workstation AMI device
-#  set_fact:
-#    ec2_workstation_device: "{{ami_find['results'][0]['root_device_name']}}"
-
 - debug: msg="{{ node_ami }}"
 #- debug: msg="{{ ec2_workstation_device }}"
-
-
 
 - name: Provision WorkStation
   ec2:
@@ -38,7 +32,7 @@
    aws_secret_key: "{{ aws_secret_key }}"
    wait: true
    key_name: "{{ remote_user_sshkey }}"
-#   vpc_subnet_id: "{{ public_subnet_id }}"
+   vpc_subnet_id: "subnet-0762202db1e2fd0e0"
 #   group: ['{{ seg_vpc }}', '{{ seg_ingress }}', '{{ seg_egress }}', '{{ seg_ssh }}']
 #   volumes:
 #    - device_name: "{{ ec2_workstation_device }}"
