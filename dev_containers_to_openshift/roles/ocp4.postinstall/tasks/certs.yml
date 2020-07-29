@@ -1,0 +1,49 @@
+---
+
+#cd $HOME
+
+- name: Delete directory if it exists
+  file:
+    path: acme
+    state: absent
+
+#git clone https://github.com/neilpang/acme.sh
+- name: Clone ACME.sh project
+  git:
+    repo: https://github.com/acmesh-official/acme.sh.git
+    dest: acme/
+    clone: yes
+
+#cd acme.sh
+
+- name: Add AWS key Id to dns_aws.sh file
+  replace:
+    path: acme/dnsapi/dns_aws.sh
+    regexp: '#(AWS_ACCESS_KEY_ID=").*'
+    replace: '\1{{ aws_access_key }}"'
+
+- name: Add AWS key to dns_aws.sh file
+  replace:
+    path: acme/dnsapi/dns_aws.sh
+    regexp: '#(AWS_SECRET_ACCESS_KEY=").*'
+    replace: '\1{{ aws_secret_key }}"'
+
+- name: Create certificates directory
+  file:
+    path: certificates
+    state: directory
+
+## This could fail if the cert was already issued. Either ignore the error or use --force to reissue the cert
+- name: Issue Certificate
+  shell: acme/acme.sh --issue -d api.{{ subdomain }} -d *.apps.{{ subdomain }} --dns dns_aws
+  ignore_errors: yes
+
+- name: Install Certificate
+  shell: acme/acme.sh --install-cert -d api.{{ subdomain }} -d *.apps.{{ subdomain }} --cert-file certificates/cert.pem --key-file certificates/key.pem --fullchain-file certificates/fullchain.pem --ca-file certificates/ca.pem
+
+- name: Create TLS Secret in OCP
+  shell: "oc --server https://api.{{ subdomain }}:6443 --insecure-skip-tls-verify --token {{ k8s_auth_results.k8s_auth.api_key }} create secret tls router-certs --cert=certificates/fullchain.pem --key=certificates/key.pem -n openshift-ingress"
+
+- name: Patch IngressController set new cert
+  shell: "oc --server https://api.{{ subdomain }}:6443 --insecure-skip-tls-verify --token {{ k8s_auth_results.k8s_auth.api_key }} patch ingresscontroller default -n openshift-ingress-operator --type=merge --patch='{\"spec\": { \"defaultCertificate\": { \"name\": \"router-certs\" }}}'"
+

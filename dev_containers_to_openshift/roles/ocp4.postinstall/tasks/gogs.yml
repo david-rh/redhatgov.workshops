@@ -1,0 +1,24 @@
+---
+########
+# Install GOGS git repository onto OpenShift
+
+#- name: Install GOGS
+#  shell: "oc --server https://api.{{ subdomain }}:6443 --insecure-skip-tls-verify --token {{ k8s_auth_results.k8s_auth.api_key }} new-app -f http://bit.ly/openshift-gogs-persistent-template --param=HOSTNAME=gogs-demo.apps.dba.rhsledcloud.net --param=DATABASE_VERSION=9.6 --param=GOGS_VERSION=0.11.4"
+
+
+####
+# Install GOGS using playbooks from siamaksade (Note: due to an incompatibility with Ansible 2.9+ we are using a modified version of the script)
+####
+- name: Install GOGS
+  import_role:
+#    name: siamaksade.openshift_gogs
+    name: openshift_gogs
+  vars:
+    gogs_route: "gogs.apps.{{ subdomain }}"
+    project_name: "gogs"
+#    gogs_admin_user:
+#    gogs_admin_password:
+#    gogs_user:
+#    gogs_password:
+    gogs_generate_user_count: 10
+    openshift_cli: "oc --server https://api.{{ subdomain }}:6443 --insecure-skip-tls-verify --token {{ k8s_auth_results.k8s_auth.api_key }}"

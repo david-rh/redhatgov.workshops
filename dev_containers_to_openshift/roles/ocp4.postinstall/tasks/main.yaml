@@ -1,0 +1,21 @@
+---
+# roles/ocp4.postinsatll/tasks/main.yml
+
+- name: Connect to OpenShift 4 cluster
+  k8s_auth:
+    host: https://api.{{ subdomain }}:6443
+    username: kubeadmin
+    password: '4Sm6B-p7aAm-ucRpL-GnN9k'
+    validate_certs: no
+  register: k8s_auth_results
+
+- include: gogs.yml
+
+
+- name: Logout of OpenShift
+  when: k8s_auth_results.k8s_auth.api_key is defined
+  k8s_auth:
+    host: https://api.{{ subdomain }}:6443
+    validate_certs: no
+    state: absent
+    api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"

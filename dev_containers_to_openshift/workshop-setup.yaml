@@ -9,4 +9,5 @@
   roles:
    - aws.infra
    - ocp4
+   - ocp4.postinstall
 

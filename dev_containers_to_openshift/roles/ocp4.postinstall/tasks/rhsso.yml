@@ -1,0 +1,70 @@
+---
+
+- name: Create namespace for RH-SSO
+  k8s:
+    name: rhsso
+    api_version: v1
+    kind: Namespace
+    host: https://api.{{ subdomain }}:6443
+    validate_certs: no
+    api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
+    state: present
+
+- name: Add operator group
+  k8s:
+    host: https://api.{{ subdomain }}:6443
+    validate_certs: no
+    api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
+    state: present
+    definition:
+      apiVersion: v1
+      kind: OperatorGroup
+      metadata:
+        name: rhsso-op-grp
+        namespace: rhsso
+      spec:
+        targetNamespaces:
+        - rhsso
+
+- name: install RH-SSO operator
+  k8s:
+    host: https://api.{{ subdomain }}:6443
+    validate_certs: no
+    api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
+    state: present
+    definition:
+      apiVersion: v1alpha1
+      kind: Subscription
+      metadata:
+        name: keycloak-operator
+        namespace: rhsso
+      spec:
+        channel: alpha
+        installPlanApproval: Automatic
+        name: rhsso-operator
+        source: redhat-operators
+        sourceNamespace: openshift-marketplace
+        startingCSV: rhsso-operator.7.4.1
+
+- name: Create RH-SSO Deployment
+  k8s:
+    host: https://api.{{ subdomain }}:6443
+    validate_certs: no
+    api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
+    state: present
+    name: workshop-sso
+    namespace: rhsso
+    definition:
+      apiVersion: keycloak.org/v1alpha1
+      kind: Keycloak
+      metadata:
+        name: workshop-sso
+        namespace: rhsso
+        labels:
+          app: sso
+      spec:
+        instances: 1
+        externalAccess:
+          enabled: True
+
+
