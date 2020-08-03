@@ -67,4 +67,156 @@
         externalAccess:
           enabled: True
 
+- name: Create Realm
+  k8s:
+    host: https://api.{{ subdomain }}:6443
+    validate_certs: no
+    api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
+    state: present
+    name: workshop-realm
+    namespace: rhsso
+    definition:
+      apiVersion: keycloak.org/v1alpha1
+      kind: KeycloakRealm
+      metadata:
+        name: workshop-realm
+        labels:
+          app: sso
+      spec:
+        realm:
+          id: "workshop"
+          realm: "workshop"
+          enabled: True
+          displayName: "Workshop Realm"
+        instanceSelector:
+          matchLabels:
+            app: sso
 
+- name: Create OpenShift SSO Client
+  k8s:
+    host: https://api.{{ subdomain }}:6443
+    validate_certs: no
+    api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
+    state: present
+    name: openshift-client
+    namespace: rhsso
+    definition:
+      apiVersion: keycloak.org/v1alpha1
+      kind: KeycloakClient
+      metadata:
+        name: openshift-client
+        labels:
+          app: sso
+      spec:
+        realmSelector:
+           matchLabels:
+            app: sso
+        client:
+          enabled: true
+          clientAuthenticatorType: client-secret
+          redirectUris:
+            - 'https://console-openshift-console.apps.{{ subdomain }}/*'
+            - 'https://api.{{ subdomain }}/*'
+            - 'https://oauth-openshift.apps.{{ subdomain }}/*'
+          clientId: openshift
+          name: openshift
+          rootUrl: 'https://console-openshift-console.apps.{{ subdomain }}/'
+          secret: openshift-secret
+          protocol: openid-connect
+
+- name: Add Client Id Secret
+  k8s:
+    host: https://api.{{ subdomain }}:6443
+    validate_certs: no
+    api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
+    state: present
+    name: openshift-sso-secret
+    namespace: openshift-config
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+         name: openshift-sso-secret
+         namespace: openshift-config
+      type: Opaque
+      stringData:
+        clientSecret: openshift-secret
+  
+- name: Add RH-SSO as OCP Oauth IdP
+  k8s:
+    host: https://api.{{ subdomain }}:6443
+    validate_certs: no
+    api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
+    state: present
+    name: cluster
+    namespace: openshift-config
+    definition:
+      apiVersion: config.openshift.io/v1
+      kind: OAuth
+      metadata:
+        name: cluster
+      spec:
+        identityProviders:
+        - name: rhsso-idp
+          challenge: true
+          login: true
+          mappingMethod: claim
+          type: OpenID
+          openID:
+            clientID: "openshift"
+            clientSecret:
+              name: openshift-sso-secret
+#            ca: 
+#              name: ca-config-map
+            extraScopes: 
+            - email
+            - profile
+            extraAuthorizeParameters: 
+              include_granted_scopes: "true"
+            claims:
+              preferredUsername: 
+              - preferred_username
+              - email
+              name: 
+              - nickname
+              - given_name
+              - name
+              email: 
+              - custom_email_claim
+              - email
+            issuer: https://keycloak-rhsso.apps.{{ subdomain }}/auth/realms/workshop
+
+- name: Add users
+  k8s:
+    host: https://api.{{ subdomain }}:6443
+    validate_certs: no
+    api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
+    state: present
+    name: realm-user
+    namespace: rhsso
+    definition:
+      apiVersion: keycloak.org/v1alpha1
+      kind: KeycloakUser
+      metadata:
+        name: example-user
+      spec:
+        user:
+          username: "realm_user"
+          credentials:
+            - type: password
+              value: "workshop"
+          firstName: "John"
+          lastName: "Doe"
+          email: "user@example.com"
+          enabled: True
+          emailVerified: False
+          realmRoles:
+            - "offline_access"
+          clientRoles:
+            account:
+              - "manage-account"
+            realm-management:
+              - "manage-users"
+        realmSelector:
+          matchLabels:
+            app: sso
